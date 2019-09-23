@@ -246,15 +246,125 @@ Execute following command in build directory. Cycle through different texmap fil
 
 Scan Line is an effecient algorithm to determine if a point lies within a polygon. Hence, in comparison to our implementation in part 1, it should be less sluggish. 
 
-The imput methods for `rasterize_scanLine` are the same as the simple `rasterize_triangle`. As mentioned before, the only change you need to make is that how you determine whether a point is in a polygon.
+For convenience, here is what you will need to modify:
 
-For convenience, here is the function you will need to modify:
+In *src/drawrend.cpp*, at the end of *DrawRend::rasterize_triangle*
+add this code:
 
-    DrawRend::rasterize_scanLine
-*located in src/drawrend.cpp*
 
-Use `L` to toggle scanline. Note your time difference.
+	cout<<"Scanline"<<endl; //To check if its works
+    Coord vert[3];
+    float y[] = {y0,y1,y2,y0};
+    float x[] = {x0,x1,x2,x0};    
+    //TRIANGLE
+    for( int i=0; i<3; i++){
+      vert[i].yMax = max(y[i],y[i+1]);
+      vert[i].yMin = min(y[i],y[i+1]);
+      if(min(y[i],y[i+1])==y[i]){
+        vert[i].xMin = x[i];
+        vert[i].xMax = x[i+1];
+      }
+      else{
+        vert[i].xMin = x[i+1];
+        vert[i].xMax = x[i];
+      }
+      // e0.invSlope = (e0.xMax-e0.xMin)/(e0.yMax-e0.yMin);
+      vert[i].invSlope = (x[i+1]-x[i])/(y[i+1]-y[i]);
+    }
+    scanLine(vert,3, color);
 
+
+In *src/drawrend.cpp*, in the fucntion *DrawRend::rasterize_scanline* erase what's already written (including function declaration) and add this code:
+
+**(This is the function where you have to use your thinking and fill in the missing parts)**
+
+	void DrawRend::scanLine(Coord *verticess, int nVertices, Color c){
+	  std::vector<Coord> ET,AET;
+
+	  // You code start here /////////////
+	  int ymin = verticess[0].yMin;
+	  int ymax = verticess[0].yMax;
+  
+	  //Populate Edge Table
+	  for (int i = 0; i < nVertices; ++i){
+	    //INSERT CODE HERE
+	  }
+	  int i,j;
+	  BubbleSort(ET,0);
+
+	  //For each scanline Update ET and AET
+	  for (int y = ymin; y<=ymax; ++y){ 
+	    i = ET.size()-1;
+	    while(i >= 0){
+		//insert records in AET
+		//INSERT CODE HERE
+	    }
+	    BubbleSort(AET,1);
+
+	    if(AET.size() > 1){
+	      for (j = 1; j < AET.size(); j=j+2){
+	        rasterize_line(AET[j-1].x,AET[j-1].y,AET[j].x,AET[j].y,c);
+	      }
+
+	      j = AET.size()-1;
+	      while (j >= 0){
+			//update AET
+			//INSERT CODE HERE
+	      }
+	    }
+	  } 
+	  // You code end here /////////////
+	}
+
+In *src/drawrend.cpp*, add this function after *DrawRend::rasterize_triangle*:
+
+	void DrawRend::BubbleSort(vector<Coord> &arr,bool set){
+	  if (arr.size() < 2)
+	    return;
+	  int i, j, flag = 1;
+	  Coord temp;
+	  int len = arr.size();
+	  if (!set) //sort w.r.t y
+    for(i = 1; (i < len) && flag; i++){
+      flag = 0;
+      for (j=0; j < (len -1); j++){
+        if (arr[j].yMin < arr[j+1].yMin){ 
+              temp = arr[j];
+              arr[j] = arr[j+1];
+              arr[j+1] = temp;
+              flag = 1;
+        }
+        else if (arr[j].yMin == arr[j+1].yMin){
+          if (arr[j].yMax < arr[j+1].yMax){
+            temp = arr[j];
+            arr[j] = arr[j+1];
+            arr[j+1] = temp;
+            flag = 1;
+          }
+        }
+      }
+    }
+	  else //sort w.r.t x
+	    for(i = 1; (i < len) && flag; i++){
+	      flag = 0;
+	      for (j=0; j < (len -1); j++){
+	        if (arr[j].x > arr[j+1].x){
+	          temp = arr[j];
+	          arr[j] = arr[j+1];
+	          arr[j+1] = temp;
+	          flag = 1;
+	        }
+	      }
+	    }
+	}
+
+In *src/drawrend.h*, add this declaration:
+
+	void BubbleSort(vector<Coord> &arr,bool set);
+
+To check whether your implementation is correct or not, comment out the code you've added in parts 5 and 6 (in *src/drawrend.cpp*), add then run the same command as for part 1:
+
+	./draw ../svg/basic/
 
 ## 
 <p align="center">
@@ -262,3 +372,4 @@ Use `L` to toggle scanline. Note your time difference.
 </p>
 
 This assignment is adapted from UC Berkeley CS184 (https://cs184.eecs.berkeley.edu/article/3).
+
